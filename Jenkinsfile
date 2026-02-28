@@ -16,7 +16,7 @@ pipeline {
         stage('Build') {
             steps {
                 // Because of the 'tools' block above, you can just use 'mvn'
-                bat 'mvn clean package -DskipTests'
+                bat 'mvn clean package -DskipTests -U'
             }
         }
 
