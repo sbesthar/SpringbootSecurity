@@ -3,7 +3,7 @@ pipeline {
 
     // Define the environment variables
     environment {
-        MAVEN_HOME = tool 'Maven 3.9' // Must match the name in Global Tool Configuration
+        MAVEN_HOME = tool 'Maven 3.9.9' // Must match the name in Global Tool Configuration
     }
 
     stages {
