@@ -1,35 +1,33 @@
 pipeline {
     agent any
 
-    // Define the environment variables
-    environment {
-        MAVEN_HOME = tool 'Maven 3.9.12' // Must match the name in Global Tool Configuration
+    tools {
+        // This MUST match the Name exactly in Manage Jenkins -> Tools
+        maven 'Maven 3.9.12'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Pulls code from the Git repo you linked in the Jenkins Job
                 checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                // Runs the Maven wrapper or Maven command to build the JAR
-                bat "${MAVEN_HOME}/bin/mvn clean package -DskipTests"
+                // Because of the 'tools' block above, you can just use 'mvn'
+                bat 'mvn clean package -DskipTests'
             }
         }
 
         stage('Unit Test') {
             steps {
-                bat "${MAVEN_HOME}/bin/mvn test"
+                bat 'mvn test'
             }
         }
 
         stage('Archive Artifacts') {
             steps {
-                // Saves the generated JAR file so you can download it from Jenkins
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
