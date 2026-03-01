@@ -2,46 +2,49 @@ pipeline {
     agent any
 
     tools {
-        // This MUST match the Name exactly in Manage Jenkins -> Tools
-        maven 'Maven 3.9.12'
+        // Use the Maven version configured in Jenkins Global Tool Configuration
+        maven 'Maven_3.9.12'
+        jdk 'JDK17'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git 'https://github.com/your-repo/SpringbootSecurity.git'
             }
         }
 
-        stage('Build') {
+        stage('Build Image Tar') {
             steps {
-                // Because of the 'tools' block above, you can just use 'mvn'
-                bat 'mvn clean package -DskipTests -U'
+                // We use buildTar to create the file in the target folder
+                // -DskipTests avoids the surefire plugin version issues
+                sh 'mvn compile jib:buildTar -DskipTests'
             }
         }
 
-        stage('Unit Test') {
+        stage('Load Image to Docker') {
             steps {
-                bat 'mvn test'
+                // Load the tar file into the local Docker daemon on the Jenkins agent
+                sh 'docker load --input target/jib-image.tar'
             }
         }
 
-        stage('Archive Artifacts') {
+        stage('Run Container') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                // Stop and remove old container if it exists, then run the new one
+                sh '''
+                    docker stop spring-app || true
+                    docker rm spring-app || true
+                    docker run -d --name spring-app -p 8080:8080 springboot-security-app
+                '''
             }
         }
     }
 
     post {
         always {
-            echo 'Build process finished.'
-        }
-        success {
-            echo 'Application built successfully!'
-        }
-        failure {
-            echo 'Build failed. Check the console logs.'
+            // Clean up the workspace to save disk space
+            cleanWs()
         }
     }
 }
