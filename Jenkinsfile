@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/sbesthar/SpringbootSecurity.git'
+                git branch: 'main', url: 'https://github.com/sbesthar/SpringbootSecurity.git'
             }
         }
 
