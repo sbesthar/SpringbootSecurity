@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Replace with your Docker Hub username/repository
-        DOCKER_IMAGE = 'bsivaraj@gmail.com/springboot-security-app'
+        // Replace with your actual Docker Hub username/repository
+        DOCKER_IMAGE = "bsivaraj@gmail.com/springboot-security-app"
     }
 
     tools {
@@ -18,11 +18,28 @@ pipeline {
             }
         }
 
-        stage('Build and Push to Docker Hub') {
+        stage('Maven Build') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'bsivaraj@gmail.com', passwordVariable: 'Sivraj@2098')]) {
-                    // Jib pushes directly using the provided credentials
-                    bat "mvn compile jib:build -Dimage=${DOCKER_IMAGE} -Djib.to.auth.username=${DOCKER_USER} -Djib.to.auth.password=${DOCKER_PASS} -DskipTests"
+                // Generate the .jar file in the target folder
+                bat 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    // Use the ID of the credentials you created in Jenkins
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'bsivaraj@gmail.com', passwordVariable: 'Sivraj@2098')]) {
+
+                        // 1. Build the image using your Dockerfile in the current directory
+                        bat "docker build -t ${DOCKER_IMAGE}:latest ."
+
+                        // 2. Login to Docker Hub
+                        bat "echo %PASS% | docker login -u %USER% --password-stdin"
+
+                        // 3. Push to Docker Hub
+                        bat "docker push ${DOCKER_IMAGE}:latest"
+                    }
                 }
             }
         }
@@ -30,6 +47,8 @@ pipeline {
 
     post {
         always {
+            // Logout to stay secure and clean the workspace
+            bat 'docker logout'
             cleanWs()
         }
     }
