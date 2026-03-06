@@ -1,8 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        // Replace with your Docker Hub username/repository
+        DOCKER_IMAGE = 'bsivaraj@gmail.com/springboot-security-app'
+    }
+
     tools {
-        // Use the Maven version configured in Jenkins Global Tool Configuration
         maven 'Maven 3.9.12'
         jdk 'JDK17'
     }
@@ -14,36 +18,18 @@ pipeline {
             }
         }
 
-        stage('Build Image Tar') {
+        stage('Build and Push to Docker Hub') {
             steps {
-                // We use buildTar to create the file in the target folder
-                // -DskipTests avoids the surefire plugin version issues
-                bat 'mvn compile jib:buildTar -DskipTests'
-            }
-        }
-
-        stage('Load Image to Docker') {
-            steps {
-                // Load the tar file into the local Docker daemon on the Jenkins agent
-                bat 'docker load --input target/jib-image.tar'
-            }
-        }
-
-        stage('Run Container') {
-            steps {
-                // Stop and remove old container if it exists, then run the new one
-                bat '''
-                    docker stop spring-app || true
-                    docker rm spring-app || true
-                    docker run -d --name spring-app -p 8080:8080 springboot-security-app
-                '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'bsivaraj@gmail.com', passwordVariable: 'Sivraj@2098')]) {
+                    // Jib pushes directly using the provided credentials
+                    bat "mvn compile jib:build -Dimage=${DOCKER_IMAGE} -Djib.to.auth.username=${DOCKER_USER} -Djib.to.auth.password=${DOCKER_PASS} -DskipTests"
+                }
             }
         }
     }
 
     post {
         always {
-            // Clean up the workspace to save disk space
             cleanWs()
         }
     }
