@@ -25,26 +25,24 @@ pipeline {
             }
         }
 
-        stage('Docker Build & Push') {
-            steps {
-                script {
-                    // Use the ID of the credentials you created in Jenkins
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'bsivaraj@gmail.com', passwordVariable: 'Sivraj@2098')]) {
+stage('Docker Build & Push') {
+    steps {
+        script {
+            // 'docker-hub-credentials' is the ID of your credentials in Jenkins
+            docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
 
-                        // 1. Build the image using your Dockerfile in the current directory
-                        bat "docker build -t ${DOCKER_IMAGE}:latest ."
+                // Build the image using your Docker Hub repository name
+                def myImage = docker.build("sbesthar/springboot-security-app:${env.BUILD_ID}")
 
-                        // 2. Login to Docker Hub
-                        bat "echo %PASS% | docker login -u %USER% --password-stdin"
+                // Push the specific build version
+                myImage.push()
 
-                        // 3. Push to Docker Hub
-                        bat "docker push ${DOCKER_IMAGE}:latest"
-                    }
-                }
+                // Also tag and push as 'latest'
+                myImage.push('latest')
             }
         }
     }
-
+}
     post {
         always {
             // Logout to stay secure and clean the workspace
