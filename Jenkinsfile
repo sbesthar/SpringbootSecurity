@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Replace with your actual Docker Hub username/repository
-        DOCKER_IMAGE = "bsivaraj@gmail.com/springboot-security-app"
+        // Updated to your Docker Hub username
+        DOCKER_REPO = "sbesthar/springboot-security-app"
     }
 
     tools {
@@ -20,33 +20,32 @@ pipeline {
 
         stage('Maven Build') {
             steps {
-                // Generate the .jar file in the target folder
                 bat 'mvn clean package -DskipTests'
             }
         }
 
-stage('Docker Build & Push') {
-    steps {
-        script {
-            // 'docker-hub-credentials' is the ID of your credentials in Jenkins
-            docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
+        stage('Docker Build & Push') {
+            steps {
+                script {
+                    // This block automatically handles 'docker login' and 'docker logout'
+                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
+                        // Build using the environment variable and build ID
+                        def myImage = docker.build("${DOCKER_REPO}:${env.BUILD_ID}")
 
-                // Build the image using your Docker Hub repository name
-                def myImage = docker.build("sbesthar/springboot-security-app:${env.BUILD_ID}")
+                        // Push the specific build version
+                        myImage.push()
 
-                // Push the specific build version
-                myImage.push()
-
-                // Also tag and push as 'latest'
-                myImage.push('latest')
+                        // Also tag and push as 'latest'
+                        myImage.push('latest')
+                    }
+                }
             }
         }
-    }
-}
+    } // <--- This was the missing closing brace for 'stages'
+
     post {
         always {
-            // Logout to stay secure and clean the workspace
-            bat 'docker logout'
+            // docker.withRegistry already logged out, so we just clean the workspace
             cleanWs()
         }
     }
