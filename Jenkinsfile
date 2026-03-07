@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     // This block automatically handles 'docker login' and 'docker logout'
-                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
                         // Build using the environment variable and build ID
                         def myImage = docker.build("${DOCKER_REPO}:${env.BUILD_ID}")
 
