@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Updated to your Docker Hub username
-        DOCKER_REPO = "sbesthar/springboot-security-app"
+        // Your Docker Hub Repository
+        DOCKER_REPO = "bsivaraj@gmail.com/springboot-security-app"
     }
 
     tools {
@@ -27,25 +27,23 @@ pipeline {
         stage('Docker Build & Push') {
             steps {
                 script {
-                    // This block automatically handles 'docker login' and 'docker logout'
+                    // Authenticate with Docker Hub using your Jenkins Credentials ID
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        // Build using the environment variable and build ID
-                        def myImage = docker.build("${DOCKER_REPO}:${env.BUILD_ID}")
 
-                        // Push the specific build version
+                        // Build the image locally on the Jenkins agent
+                        def myImage = docker.build("${env.DOCKER_REPO}:${env.BUILD_ID}")
+
+                        // Push the specific Build ID tag and the 'latest' tag
                         myImage.push()
-
-                        // Also tag and push as 'latest'
                         myImage.push('latest')
                     }
                 }
             }
         }
-    } // <--- This was the missing closing brace for 'stages'
+    }
 
     post {
         always {
-            // docker.withRegistry already logged out, so we just clean the workspace
             cleanWs()
         }
     }
